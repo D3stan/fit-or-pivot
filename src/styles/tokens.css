@@ -1,0 +1,5 @@
+:root{
+  --ink:#1d1a16; --paper:#ece2c6; --card:#fbf5e4; --muted:#5d5446; --line:#1d1a16;
+  --red:#d9412b; --red-bg:#f6cfc4; --gold:#f2b632; --green:#2e7d3a; --green-bg:#cde6c0; --blue:#2b5fa8;
+  --sh:4px 4px 0 var(--ink);
+}

@@ -1,0 +1,17 @@
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper) radial-gradient(rgba(29,26,22,.10) 1px,transparent 1.2px) 0 0/14px 14px;color:var(--ink);
+  font-family:"Patrick Hand","Comic Sans MS","Chalkboard SE",cursive;font-size:19px;line-height:1.35}
+#app{max-width:920px;margin:0 auto;padding:0 16px 56px}
+h1,h2,h3{margin:0 0 .4em;line-height:1.1;font-family:"Permanent Marker","Marker Felt",cursive;font-weight:400;letter-spacing:.5px}
+h1{font-size:3.2rem} h2{font-size:1.9rem} h3{font-size:1.3rem}
+p{margin:.3em 0 .8em}
+b{font-weight:700}
+.muted{color:var(--muted)}
+.small{font-size:.9rem}
+:focus-visible{outline:3px dashed var(--red);outline-offset:3px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.right{margin-left:auto}
+.center{text-align:center}
+svg text{font-family:inherit}
+footer{color:var(--muted);font-size:.9rem;text-align:center;margin-top:28px}
