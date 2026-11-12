@@ -66,6 +66,14 @@ input[type=text]:focus,select:focus{outline:none;box-shadow:var(--sh)}
 .delta{font-size:.95rem}
 .up{color:var(--green)} .down{color:var(--red)} .flat{color:var(--muted)}
 .kpi.ok{background:var(--green-bg)}
+.g4{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.impact .grid{gap:12px}
+.impact .kpi .v{font-size:1.6rem}
+.impact .was{font-size:1.15rem;color:var(--muted)}
+.impact .link{font-size:1.15rem;border-left:5px solid var(--red);padding-left:10px;margin:.2em 0 14px}
+.spend{margin-top:14px;font-size:1rem;gap:8px}
+.spend .cost{margin-left:4px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .kpi.ok .v::after{content:" ✔";color:var(--green)}
 
 .quote{position:relative;background:#fff;border:3px solid var(--ink);border-radius:14px 14px 14px 2px;padding:8px 12px;margin:10px 0 18px}

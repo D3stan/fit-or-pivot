@@ -3,10 +3,10 @@ import { RET_TARGET, VD_TARGET, WIN_STREAK } from '../../game/config';
 import { runway } from '../../game/engine';
 import type { State } from '../../game/types';
 
-function delta(cur: number, prev: number, suffix = ''): string {
+export function delta(cur: number, prev: number, fmt: (d: number) => string = String): string {
   const d = cur - prev;
   if (d === 0) return `<span class="delta flat">no change</span>`;
-  return `<span class="delta ${d > 0 ? 'up' : 'down'}">${d > 0 ? '▲ +' : '▼ '}${d}${suffix}</span>`;
+  return `<span class="delta ${d > 0 ? 'up' : 'down'}">${d > 0 ? '▲ +' : '▼ '}${fmt(d)}</span>`;
 }
 
 export function kpis(s: State): string {

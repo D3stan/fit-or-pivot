@@ -4,7 +4,7 @@ import { endState, segmentOf } from '../../game/engine';
 import type { State } from '../../game/types';
 import { chart } from '../components/chart';
 import { featureChips } from '../components/chips';
-import { kpis } from '../components/kpis';
+import { impact } from '../components/impact';
 import { notes } from '../components/notes';
 import { topBar } from '../components/topBar';
 
@@ -15,7 +15,7 @@ export function result(s: State): string {
   <p class="muted"><b>${s.lastDecision}</b> · Customer: ${seg.emoji} ${seg.name} · Tone: ${STYLES[s.style].label}</p>
   <div class="chips" style="margin-bottom:12px">${featureChips(s.features)}</div>
   <div class="banner ${m.cls}" role="status">${m.text}</div>
-  ${kpis(s)}
+  ${impact(s)}
   <div class="grid g2" style="margin-top:16px">
     <div class="card" style="margin:0"><h3>What customers said</h3>
       ${s.quotes.map(q => `<div class="quote">${esc(q)}</div>`).join('')}
