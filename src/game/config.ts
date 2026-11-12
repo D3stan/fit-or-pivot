@@ -8,6 +8,9 @@ export const ADD_COST = 12000;
 export const PIVOT_COST = 20000;
 export const INTERVIEW_COST = 2000;
 
+/** Metrics a pivot restarts from. */
+export const PIVOT_START = { ret: 8, vd: 10, sat: 40 };
+
 export const MAX_FEATURES = 4;
 export const MVP_FEATURES = 2;
 

@@ -38,6 +38,17 @@ export interface HistoryRow {
   style: StyleKey;
 }
 
+/** Before/after of the month just played, with where the cash went. */
+export interface Impact {
+  /** Cash at the end of last month (before interviews and the decision); metrics before the decision. */
+  before: Metrics;
+  after: Metrics;
+  /** What the cash was spent on this month; before.cash minus their sum is after.cash. */
+  costs: { label: string; amount: number }[];
+  /** One plain-text sentence linking the decision to what moved. */
+  link: string;
+}
+
 export interface Message { cls: 'good' | 'warn' | 'bad'; text: string }
 
 export type Modal =
@@ -67,6 +78,9 @@ export interface State {
   modal: Modal | null;
   ended: Ending | null;
   prev: Metrics | null;
+  impact: Impact | null;
+  /** Interview spend since the last month was played. */
+  interviewSpend: number;
   quotes: string[];
   msg: Message | null;
   lastDecision: Decision | '';

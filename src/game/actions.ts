@@ -1,10 +1,10 @@
 // Player actions -> next state. Returns the same object when nothing changes,
 // so the caller can skip re-rendering.
 import {
-  ADD_COST, FEATURE_COST, INTERVIEW_COST, ITER_COST, MVP_FEATURES, PIVOT_COST,
+  ADD_COST, FEATURE_COST, INTERVIEW_COST, ITER_COST, MVP_FEATURES, PIVOT_COST, PIVOT_START,
 } from './config';
 import { SEGMENTS, SURPRISE } from './content';
-import { endState, runMonth } from './engine';
+import { endState, makeImpact, runMonth } from './engine';
 import { newState } from './state';
 import type { Decision, FeatureKey, Modal, Rng, SegmentKey, State, StyleKey } from './types';
 
@@ -18,9 +18,11 @@ export type Action =
   | { type: 'feat'; f: FeatureKey }
   | { type: 'modalField'; key: string; value: string };
 
-/** Pay for a change, then simulate the month; the UI shows 'testing' before 'result'. */
-function startTest(s: State, decision: Decision, cost: number, rng: Rng): State {
-  return { ...runMonth({ ...s, cash: s.cash - cost }, decision, rng), screen: 'testing' };
+/** Pay for a change, then simulate the month; the UI shows 'testing' before 'result'.
+ *  `before` is the state when the player made the decision, `changed` has the change applied. */
+function startTest(before: State, changed: State, decision: Decision, cost: number, rng: Rng): State {
+  const next = runMonth({ ...changed, cash: changed.cash - cost }, decision, rng);
+  return { ...next, screen: 'testing', interviewSpend: 0, impact: makeImpact(before, next, decision, cost) };
 }
 
 function interview(s: State, segKey: SegmentKey): State {
@@ -30,6 +32,7 @@ function interview(s: State, segKey: SegmentKey): State {
   return {
     ...s,
     cash: s.cash - INTERVIEW_COST,
+    interviewSpend: s.interviewSpend + INTERVIEW_COST,
     interviews: s.interviews + 1,
     notes: { ...s.notes, [segKey]: [...notes, seg.interview[notes.length]] },
   };
@@ -57,13 +60,13 @@ export function reduce(s: State, a: Action, rng: Rng): State {
     }
     case 'launch':
       if (s.pick.length !== MVP_FEATURES) return s;
-      return startTest({ ...s, features: [...s.pick] }, 'Launch MVP', FEATURE_COST * MVP_FEATURES, rng);
+      return startTest(s, { ...s, features: [...s.pick] }, 'Launch MVP', FEATURE_COST * MVP_FEATURES, rng);
     case 'showResult': return { ...s, screen: 'result' };
     case 'next': {
       const e = endState(s);
       return e ? { ...s, ended: e, screen: 'end' } : { ...s, screen: 'decide' };
     }
-    case 'persevere': return startTest(s, 'Persevere', 0, rng);
+    case 'persevere': return startTest(s, s, 'Persevere', 0, rng);
     case 'openIterate': return { ...s, modal: { type: 'iterate', remove: '', add: '', style: s.style } };
     case 'openAdd': return { ...s, modal: { type: 'add', add: '' } };
     case 'openPivot': return { ...s, modal: { type: 'pivot', seg: '', idea: s.idea, style: s.style } };
@@ -75,17 +78,17 @@ export function reduce(s: State, a: Action, rng: Rng): State {
     case 'confirmIterate': {
       if (m?.type !== 'iterate') return s;
       const features = m.remove && m.add ? s.features.filter(f => f !== m.remove).concat(m.add) : s.features;
-      return startTest({ ...s, modal: null, features, style: m.style }, 'Iterate', ITER_COST, rng);
+      return startTest(s, { ...s, modal: null, features, style: m.style }, 'Iterate', ITER_COST, rng);
     }
     case 'confirmAdd': {
       if (m?.type !== 'add' || !m.add) return s;
-      return startTest({ ...s, modal: null, features: [...s.features, m.add] }, 'Add a feature', ADD_COST, rng);
+      return startTest(s, { ...s, modal: null, features: [...s.features, m.add] }, 'Add a feature', ADD_COST, rng);
     }
     case 'confirmPivot': {
       if (m?.type !== 'pivot' || !m.seg) return s;
-      return startTest({
+      return startTest(s, {
         ...s, modal: null, segment: m.seg, idea: m.idea.trim(), style: m.style, pivots: s.pivots + 1,
-        ret: 8, vd: 10, sat: 40, streak: 0,
+        ...PIVOT_START, streak: 0,
       }, 'Pivot', PIVOT_COST, rng);
     }
     case 'restart': return newState();
