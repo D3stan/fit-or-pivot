@@ -1,6 +1,6 @@
 import { eur } from '../../format';
 import { INTERVIEW_COST } from '../../game/config';
-import { SEGMENTS } from '../../game/content';
+import { SEGMENTS, TESTS } from '../../game/content';
 import type { SegmentKey, State } from '../../game/types';
 import { notes } from '../components/notes';
 import { topBar } from '../components/topBar';
@@ -13,6 +13,7 @@ export function customer(s: State): string {
       <div class="emoji">${g.emoji}</div><h3>${g.name}</h3>
       <p class="muted">${g.surface}</p>
       ${notes(s, k)}
+      <p class="hint">${TESTS.interview}</p>
       <div class="row">
         <button class="btn alt" data-a="interview" data-seg="${k}" ${left <= 0 || s.cash < INTERVIEW_COST ? 'disabled' : ''}>Interview <span class="cost">${eur(INTERVIEW_COST)}</span></button>
         <button class="btn" data-a="choose" data-seg="${k}">Choose</button>

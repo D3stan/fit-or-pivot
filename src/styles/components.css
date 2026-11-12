@@ -85,6 +85,7 @@ input[type=text]:focus,select:focus{outline:none;box-shadow:var(--sh)}
 .chips{display:flex;gap:8px;flex-wrap:wrap}
 .chip{background:var(--card);border:2px solid var(--ink);padding:1px 10px;font-size:1rem}
 
+.hint{display:block;border-left:4px solid var(--blue);padding-left:8px;font-size:.95rem;margin:.4em 0 .8em;color:var(--ink)}
 .opt h3{display:flex;align-items:center;flex-wrap:wrap}
 table{width:100%;border-collapse:collapse;font-size:1rem}
 th,td{text-align:left;padding:5px 8px;border-bottom:2px dashed rgba(29,26,22,.3)}

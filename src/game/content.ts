@@ -1,11 +1,21 @@
 import type { Feature, FeatureKey, Segment, SegmentKey, Style, StyleKey } from './types';
 
 export const FEATURES: Record<FeatureKey, Feature> = {
-  invoice: { name: 'Invoice export', icon: '🧾', desc: 'Turn your work into invoices and export them' },
-  remind: { name: 'Smart reminders', icon: '⏰', desc: 'Nudges for deadlines, orders and payments' },
-  team: { name: 'Team sharing', icon: '👥', desc: 'Share plans and schedules with other people' },
-  stats: { name: 'Analytics dashboard', icon: '📊', desc: 'Charts about progress and performance' },
-  design: { name: 'Polished design', icon: '🎨', desc: 'Beautiful themes and animations' },
+  invoice: { name: 'Invoice export', icon: '🧾', desc: 'Turn your work into invoices and export them', test: 'Tests whether getting paid is the real pain.' },
+  remind: { name: 'Smart reminders', icon: '⏰', desc: 'Nudges for deadlines, orders and payments', test: 'Tests whether forgetting things is what hurts.' },
+  team: { name: 'Team sharing', icon: '👥', desc: 'Share plans and schedules with other people', test: 'Tests whether working with others is the bottleneck.' },
+  stats: { name: 'Analytics dashboard', icon: '📊', desc: 'Charts about progress and performance', test: 'Tests whether they want to see how they are doing.' },
+  design: { name: 'Polished design', icon: '🎨', desc: 'Beautiful themes and animations', test: 'Tests whether good looks alone bring people back.' },
+};
+
+/** One-line hint per option: what choosing it tests. */
+export const TESTS = {
+  launch: 'Tests whether these two features solve a real problem for this customer.',
+  persevere: 'Tests whether the trend continues on its own.',
+  iterate: 'Tests whether a different feature or tone fits this customer better.',
+  add: 'Tests whether more product creates more value (often it doesn’t).',
+  pivot: 'Tests a different customer: is the problem bigger there?',
+  interview: 'Tests what the customer really needs before you pay to build it.',
 };
 
 export const STYLES: Record<StyleKey, Style> = {

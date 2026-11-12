@@ -6,7 +6,7 @@ export type Screen = 'intro' | 'setup' | 'customer' | 'build' | 'testing' | 'res
 export type Decision = 'Launch MVP' | 'Persevere' | 'Iterate' | 'Add a feature' | 'Pivot';
 export type Ending = 'win' | 'broke' | 'time';
 
-export interface Feature { name: string; icon: string; desc: string }
+export interface Feature { name: string; icon: string; desc: string; /** What building it tests. */ test: string }
 export interface Style { label: string; emoji: string; desc: string }
 
 export interface Segment {
