@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fit or Pivot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Permanent+Marker&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1d1a16; --paper:#ece2c6; --card:#fbf5e4; --muted:#5d5446; --line:#1d1a16;
+  --red:#d9412b; --red-bg:#f6cfc4; --gold:#f2b632; --green:#2e7d3a; --green-bg:#cde6c0; --blue:#2b5fa8;
+  /* old names, still used inline in the markup */
+  --navy:var(--ink); --purple:var(--blue); --purple-d:#1f4682; --violet:var(--blue); --lilac:#dbe4f0; --orange:var(--red); --bg:var(--paper);
+  --sh:4px 4px 0 var(--ink);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper) radial-gradient(rgba(29,26,22,.10) 1px,transparent 1.2px) 0 0/14px 14px;color:var(--ink);
+  font-family:"Patrick Hand","Comic Sans MS","Chalkboard SE",cursive;font-size:19px;line-height:1.35}
+#app{max-width:920px;margin:0 auto;padding:0 16px 56px}
+h1,h2,h3{margin:0 0 .4em;line-height:1.1;font-family:"Permanent Marker","Marker Felt",cursive;font-weight:400;letter-spacing:.5px}
+h1{font-size:3.2rem} h2{font-size:1.9rem} h3{font-size:1.3rem}
+p{margin:.3em 0 .8em}
+b{font-weight:700}
+.muted{color:var(--muted)}
+.small{font-size:.9rem}
+
+/* HUD */
+.top{position:sticky;top:0;z-index:5;background:var(--paper);padding:10px 0 10px;border-bottom:3px solid var(--ink);margin-bottom:18px}
+.top-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{font-family:"Permanent Marker",cursive;font-size:1.4rem;color:var(--red);transform:rotate(-2deg)}
+.brand span{color:var(--ink);font-size:1.05rem;margin-left:10px;background:var(--gold);border:2px solid var(--ink);padding:0 8px;display:inline-block;transform:rotate(3deg)}
+.pills{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pill{background:var(--card);border:3px solid var(--ink);padding:2px 10px;font-size:1.05rem;box-shadow:3px 3px 0 var(--ink)}
+.pill.bad{background:var(--red);color:#fff;animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{background:var(--card);color:var(--red)}}
+.linkbtn{background:none;border:0;color:var(--ink);font:inherit;text-decoration:underline wavy var(--red);cursor:pointer;padding:4px}
+.bar{height:20px;background:var(--card) repeating-linear-gradient(90deg,transparent 0 calc(100%/12 - 3px),var(--ink) calc(100%/12 - 3px) calc(100%/12));border:3px solid var(--ink);margin-top:10px;overflow:hidden}
+.bar>i{display:block;height:100%;background:repeating-linear-gradient(-45deg,var(--red) 0 8px,#b5321f 8px 16px);border-right:3px solid var(--ink);transition:width .4s steps(4)}
+.bar-label{display:flex;justify-content:space-between;font-size:.95rem;color:var(--muted);margin-top:4px}
+
+/* loop stepper */
+.steps{display:flex;gap:8px;margin:0 0 20px;padding:0;list-style:none;flex-wrap:wrap}
+.steps li{flex:1 1 0;min-width:86px;text-align:center;font-size:1rem;padding:5px 4px;border:3px solid var(--ink);background:var(--card);color:var(--muted)}
+.steps li.on{background:var(--ink);color:var(--gold);transform:rotate(-2deg) scale(1.06)}
+.steps li.done{text-decoration:line-through 2px var(--red);color:var(--ink)}
+
+/* cards & buttons */
+.card{background:var(--card);border:3px solid var(--ink);border-radius:3px 10px 4px 12px/10px 3px 12px 4px;padding:20px;margin-bottom:18px;box-shadow:6px 6px 0 var(--ink)}
+.grid{display:grid;gap:18px}
+.grid>.card:nth-child(odd),.grid>.choice:nth-child(odd){transform:rotate(-.7deg)}
+.grid>.card:nth-child(even),.grid>.choice:nth-child(even){transform:rotate(.6deg)}
+.g3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.g5{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.btn{appearance:none;border:3px solid var(--ink);background:var(--gold);color:var(--ink);font:inherit;font-size:1.1rem;padding:8px 18px;border-radius:4px 8px 4px 10px;cursor:pointer;box-shadow:var(--sh);transition:transform .06s,box-shadow .06s}
+.btn:hover:not(:disabled){transform:translate(-1px,-1px) rotate(-1deg);box-shadow:6px 6px 0 var(--ink)}
+.btn:active:not(:disabled){transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+.btn.alt{background:var(--card)}
+.btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+.btn.big{font-family:"Permanent Marker",cursive;font-size:1.4rem;padding:12px 28px;background:var(--red);color:#fff}
+:focus-visible{outline:3px dashed var(--red);outline-offset:3px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.right{margin-left:auto}
+
+.hero{background:var(--red);color:#fff;border:4px solid var(--ink);box-shadow:10px 10px 0 var(--ink);padding:34px 28px;margin:28px 6px 26px;transform:rotate(-1deg);position:relative}
+.hero h1{color:#fff;text-shadow:4px 4px 0 var(--ink);-webkit-text-stroke:1px var(--ink)}
+.hero .tag{display:inline-block;background:var(--gold);color:var(--ink);border:2px solid var(--ink);padding:2px 10px;margin-bottom:10px;transform:rotate(2deg)}
+.hero p{font-size:1.2rem}
+.hero .btn.big{background:var(--gold);color:var(--ink);box-shadow:6px 6px 0 var(--ink)}
+.loopline{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+.loopline span{background:var(--card);color:var(--ink);border:3px solid var(--ink);padding:4px 12px}
+.loopline span:nth-child(odd){transform:rotate(-3deg)} .loopline span:nth-child(even){transform:rotate(2deg)}
+
+label.field{display:block;font-size:1.15rem;margin:16px 0 6px}
+input[type=text],select{width:100%;font:inherit;padding:9px 12px;border:3px solid var(--ink);border-radius:2px;background:#fff;color:var(--ink)}
+input[type=text]:focus,select:focus{outline:none;box-shadow:var(--sh)}
+
+.choice{display:block;position:relative;border:3px solid var(--ink);padding:14px;background:var(--card);cursor:pointer;height:100%;box-shadow:3px 3px 0 var(--ink)}
+.choice:hover{background:#fff}
+.choice.sel{background:var(--gold);box-shadow:6px 6px 0 var(--ink)}
+.choice input{position:absolute;opacity:0;pointer-events:none}
+.choice:focus-within{outline:3px dashed var(--red);outline-offset:3px}
+.choice .t{display:block;font-size:1.15rem}
+.choice .d{color:var(--muted);font-size:.95rem;display:block;margin-top:2px}
+.choice.sel .d{color:var(--ink)}
+.cost{display:inline-block;background:var(--red);color:#fff;border:2px solid var(--ink);padding:0 7px;font-family:"Patrick Hand",cursive;font-size:.95rem;margin-left:8px;transform:rotate(-4deg)}
+
+.seg .emoji{font-size:2.6rem;line-height:1}
+.note{background:#fff27a;border:2px solid var(--ink);padding:14px 12px 8px;margin:12px 4px;font-size:1rem;position:relative;transform:rotate(-.8deg);box-shadow:3px 3px 0 rgba(29,26,22,.35)}
+.note::before{content:"";position:absolute;top:-10px;left:50%;width:70px;height:18px;margin-left:-35px;background:rgba(255,255,255,.6);border:1px solid rgba(29,26,22,.25);transform:rotate(-3deg)}
+
+.kpi{background:var(--card);border:3px solid var(--ink);padding:10px 12px;box-shadow:3px 3px 0 var(--ink)}
+.kpi .v{font-family:"Permanent Marker",cursive;font-size:2rem;line-height:1.1}
+.kpi .l{font-size:.95rem;color:var(--muted)}
+.delta{font-size:.95rem}
+.up{color:var(--green)} .down{color:var(--red)} .flat{color:var(--muted)}
+.kpi.ok{background:var(--green-bg)}
+.kpi.ok .v::after{content:" ✔";color:var(--green)}
+
+.quote{position:relative;background:#fff;border:3px solid var(--ink);border-radius:14px 14px 14px 2px;padding:8px 12px;margin:10px 0 18px}
+.quote::after{content:"";position:absolute;left:14px;bottom:-12px;border:6px solid transparent;border-top-color:var(--ink);border-left-color:var(--ink)}
+.banner{border:3px dashed var(--ink);padding:12px 16px;margin-bottom:16px;font-size:1.1rem;transform:rotate(-.4deg)}
+.banner.good{background:var(--green-bg)}
+.banner.warn{background:#fff27a}
+.banner.bad{background:var(--red-bg)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{background:var(--card);border:2px solid var(--ink);padding:1px 10px;font-size:1rem}
+
+.opt h3{display:flex;align-items:center;flex-wrap:wrap}
+table{width:100%;border-collapse:collapse;font-size:1rem}
+th,td{text-align:left;padding:5px 8px;border-bottom:2px dashed rgba(29,26,22,.3)}
+th{border-bottom:3px solid var(--ink)}
+.scroll{overflow-x:auto}
+
+.overlay{position:fixed;inset:0;background:rgba(29,26,22,.6);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
+.modal{background:var(--card);border:4px solid var(--ink);box-shadow:10px 10px 0 var(--ink);max-width:560px;width:100%;max-height:92vh;overflow:auto;padding:22px}
+.spinner{width:56px;height:56px;margin:0 auto 18px;border:4px solid var(--ink);background:#fff;border-radius:8px;position:relative;animation:roll .6s steps(4) infinite;box-shadow:var(--sh)}
+.spinner::before{content:"⚄";position:absolute;inset:0;display:grid;place-items:center;font-size:2.4rem;line-height:1}
+@keyframes roll{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spinner,.pill.bad{animation:none}.bar>i{transition:none}}
+.center{text-align:center}
+svg text{font-family:inherit}
+footer{color:var(--muted);font-size:.9rem;text-align:center;margin-top:28px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+'use strict';
+/* =====================  CONSTANTS  ===================== */
+const START_CASH = 100000, BURN = 5000, MAX_MONTH = 12;
+const FEATURE_COST = 5000, ITER_COST = 4000, ADD_COST = 12000, PIVOT_COST = 20000, INTERVIEW_COST = 2000;
+const MAX_FEATURES = 4;
+
+const FEATURES = {
+  invoice:{name:'Invoice export', icon:'🧾', desc:'Turn your work into invoices and export them'},
+  remind: {name:'Smart reminders', icon:'⏰', desc:'Nudges for deadlines, orders and payments'},
+  team:   {name:'Team sharing',    icon:'👥', desc:'Share plans and schedules with other people'},
+  stats:  {name:'Analytics dashboard', icon:'📊', desc:'Charts about progress and performance'},
+  design: {name:'Polished design', icon:'🎨', desc:'Beautiful themes and animations'}
+};
+
+const STYLES = {
+  playful:     {label:'Playful',      emoji:'🎈', desc:'Friendly, colourful, a bit cheeky'},
+  minimal:     {label:'Minimal',      emoji:'⚪', desc:'Calm, clean, no fuss'},
+  professional:{label:'Professional', emoji:'💼', desc:'Serious, polished, data-driven'}
+};
+
+/* Hidden truth about each customer segment. The player never sees the weights. */
+const SEG = {
+  students:{
+    name:'Student freelancers', emoji:'🎓', style:'playful', primary:'invoice', secondary:'remind',
+    surface:'Young, always online, juggling small gigs. They say: “I just want something to organise my work.”',
+    need:{invoice:.5, remind:.3, team:.05, stats:.05, design:0},
+    hidden:'Getting paid. They lose money because they invoice late and forget to chase clients.',
+    interview:[
+      '“If I could fix one thing, it would be getting paid on time. Not my to-do list.”',
+      '“When a client is late I have to chase them, and I never remember who owes me what.”'],
+    q:{ miss1:'“My biggest headache is getting paid. I always forget to send invoices on time.”',
+        got1:'“Exporting an invoice in two clicks is the reason I open {name}.”',
+        miss2:'“I would use it more if it nudged me when a client still owes me money.”',
+        got2:'“The reminders mean I finally chase late payments.”',
+        tone:'“It feels a bit too serious for me.”'}
+  },
+  cafes:{
+    name:'Small café owners', emoji:'☕', style:'minimal', primary:'team', secondary:'remind',
+    surface:'Busy, tiny margins, no time. They say: “I need better tools.”',
+    need:{team:.5, remind:.3, invoice:.05, stats:.05, design:0},
+    hidden:'Coordinating staff. The shift plan lives in a chat group and changes get missed.',
+    interview:[
+      '“My real problem is the staff. Who works when, and who swapped with who.”',
+      '“Orders to suppliers get forgotten when it is busy.”'],
+    q:{ miss1:'“The shift plan lives in a chat group. Half my staff never see the changes.”',
+        got1:'“Everyone sees the same shift plan in {name}. No more chat chaos.”',
+        miss2:'“I forget supplier orders unless something reminds me.”',
+        got2:'“The reminders save us from running out of milk on a Saturday.”',
+        tone:'“Too much going on. I want it calm and simple.”'}
+  },
+  teams:{
+    name:'Remote startup teams', emoji:'💻', style:'professional', primary:'stats', secondary:'team',
+    surface:'Small, ambitious, spread over time zones. They say: “We need more insight.”',
+    need:{stats:.5, team:.3, remind:.05, invoice:.05, design:0},
+    hidden:'Seeing what is going on. Nobody has one shared view of progress and results.',
+    interview:[
+      '“What we lack is insight. Are we on track or not? Nobody can tell.”',
+      '“Everyone has their own spreadsheet. We need one shared place.”'],
+    q:{ miss1:'“We have no idea how we are doing. I want progress and numbers in one place.”',
+        got1:'“The dashboard in {name} is the first thing we open on Monday.”',
+        miss2:'“Everyone keeps their own list. We lack a shared view.”',
+        got2:'“One shared board stopped the ‘who is doing what?’ meetings.”',
+        tone:'“Cute, but my team needs it to feel more professional.”'}
+  }
+};
+
+const SURPRISE = [
+  {name:'Flowly',  idea:'An app that turns messy to-do lists into a calm plan for the week.'},
+  {name:'Taskaroo',idea:'A friendly work organiser that keeps small teams on the same page.'},
+  {name:'Nudge',   idea:'A tiny assistant that reminds you of the things you always forget.'},
+  {name:'Plotline',idea:'A simple tool that shows where your work is going and where it gets stuck.'}
+];
+
+/* =====================  STATE  ===================== */
+let S;
+function newState(){
+  return {screen:'intro', month:0, cash:START_CASH, name:'', idea:'', style:'playful',
+    segment:null, features:[], sat:40, ret:10, vd:10, streak:0, history:[], notes:{},
+    pivots:0, interviews:0, everDesign:false, modal:null, ended:null, prev:null,
+    quotes:[], msg:null, lastDecision:'', pick:[], setupError:''};
+}
+S = newState();
+
+/* =====================  HELPERS  ===================== */
+const $app = document.getElementById('app');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const eur = n => (n<0?'-':'') + '€' + Math.abs(n/1000) + 'k';
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const pName = () => esc(S.name || 'Your app');
+const runway = () => Math.max(0, Math.floor(S.cash / BURN));
+const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function needScore(){
+  const seg = SEG[S.segment];
+  let s = 0; S.features.forEach(f => s += seg.need[f]);
+  return Math.pow(Math.min(1, s/0.8), 1.3);
+}
+
+/* =====================  GAME LOGIC  ===================== */
+function runMonth(decision){
+  S.prev = {sat:S.sat, ret:S.ret, vd:S.vd, cash:S.cash};
+  S.month++; S.cash -= BURN; S.lastDecision = decision;
+  const seg = SEG[S.segment];
+  const n = needScore();
+  const sm = S.style === seg.style ? 1 : 0;
+  const d = S.features.includes('design') ? 1 : 0;
+  if (d) S.everDesign = true;
+  const tVD  = 6 + 50*n + 4*sm;
+  const tRet = 6 + 42*n + 5*sm;
+  const tSat = Math.min(95, 30 + 25*n + 18*d + 6*sm);
+  const jit = () => Math.round(Math.random()*4 - 2);
+  S.vd  = clamp(Math.round(S.vd  + .45*(tVD  - S.vd))  + jit(), 0, 100);
+  S.ret = clamp(Math.round(S.ret + .45*(tRet - S.ret)) + jit(), 0, 100);
+  S.sat = clamp(Math.round(S.sat + .45*(tSat - S.sat)) + jit(), 0, 100);
+  const fitNow = S.vd >= 40 && S.ret >= 30;
+  S.streak = fitNow ? S.streak + 1 : 0;
+  S.history.push({month:S.month, vd:S.vd, ret:S.ret, sat:S.sat, cash:S.cash, decision,
+                  segment:S.segment, features:[...S.features], style:S.style});
+  S.quotes = makeQuotes(n, sm);
+  S.msg = makeMessage(fitNow);
+}
+
+function makeQuotes(n, sm){
+  const seg = SEG[S.segment], has = f => S.features.includes(f), nm = S.name || 'this app';
+  const fill = t => t.replace('{name}', nm);
+  const c = [];
+  c.push(has(seg.primary) ? fill(seg.q.got1) : seg.q.miss1);
+  if (has('design')) c.push(n < .6 ? `“Nice design. I'm not sure what problem ${nm} solves for me.”` : '“It looks great, and it actually helps.”');
+  if (S.sat - S.ret >= 18) c.push('“Love the idea, but I forgot to open it again.”');
+  if (Math.random() < .7) c.push(has(seg.secondary) ? fill(seg.q.got2) : seg.q.miss2);
+  if (!sm) c.push(seg.q.tone);
+  c.push(n > .8 ? `“${nm} saves me time every week. I would be upset if it disappeared.”`
+                : `“I tried ${nm} a couple of times and went back to my old way of doing things.”`);
+  return [...new Set(c)].slice(0, 3);
+}
+
+function makeMessage(fitNow){
+  const gap = S.sat - S.ret;
+  if (S.vd >= 40 && S.ret >= 30)
+    return {cls:'good', text:`Both fit signals are green. Keep it up for ${3 - S.streak > 0 ? (3 - S.streak) + ' more month' + (3 - S.streak > 1 ? 's' : '') : '0 more months'}.`};
+  if (gap >= 18)
+    return {cls:'warn', text:'Satisfaction is much higher than retention. Customers are being polite, but they do not come back. Compliments are not fit.'};
+  if (S.vd < 40 && S.ret < 30)
+    return {cls:'bad', text:'Neither fit signal passes yet. Are you solving a problem this segment really has?'};
+  return {cls:'warn', text:'One fit signal passes, the other does not yet. You are getting closer, or it is a coincidence. Look at the trend.'};
+}
+
+function endState(){
+  if (S.streak >= 3) return 'win';
+  if (S.cash <= 0) return 'broke';
+  if (S.month >= MAX_MONTH) return 'time';
+  return null;
+}
+
+/* =====================  ACTIONS  ===================== */
+function go(screen){ S.screen = screen; render(); window.scrollTo(0,0); }
+
+function startTest(decision, cost){
+  S.cash -= cost;
+  runMonth(decision);
+  S.screen = 'testing'; render(); window.scrollTo(0,0);
+  setTimeout(() => { S.screen = 'result'; render(); window.scrollTo(0,0); }, reduced ? 0 : 1000);
+}
+
+function doInterview(segKey){
+  if (S.cash < INTERVIEW_COST) return;
+  const seg = SEG[segKey]; S.notes[segKey] = S.notes[segKey] || [];
+  if (S.notes[segKey].length >= seg.interview.length) return;
+  S.cash -= INTERVIEW_COST; S.interviews++;
+  S.notes[segKey].push(seg.interview[S.notes[segKey].length]);
+  render();
+}
+
+function act(a, d){
+  switch(a){
+    case 'start': go('setup'); break;
+    case 'surprise': {
+      const r = SURPRISE[Math.floor(Math.random()*SURPRISE.length)];
+      S.name = r.name; S.idea = r.idea; render(); break; }
+    case 'style': S.name = val('name'); S.idea = val('idea'); S.style = d.v; render(); break;
+    case 'setupDone':
+      S.name = val('name').trim(); S.idea = val('idea').trim();
+      if (!S.name){ S.setupError = 'Give your product a name first (or press “Surprise me”).'; render(); return; }
+      S.setupError = ''; go('customer'); break;
+    case 'interview': doInterview(d.seg); break;
+    case 'choose': S.segment = d.seg; go('build'); break;
+    case 'feat': {
+      const f = d.f, i = S.pick.indexOf(f);
+      if (i >= 0) S.pick.splice(i,1); else if (S.pick.length < 2) S.pick.push(f);
+      render(); break; }
+    case 'launch':
+      if (S.pick.length !== 2) return;
+      S.features = [...S.pick]; startTest('Launch MVP', FEATURE_COST * 2); break;
+    case 'next': {
+      const e = endState();
+      if (e){ S.ended = e; go('end'); } else go('decide'); break; }
+    case 'persevere': startTest('Persevere', 0); break;
+    case 'openIterate': S.modal = {type:'iterate', remove:'', add:'', style:S.style}; render(); break;
+    case 'openAdd':     S.modal = {type:'add', add:''}; render(); break;
+    case 'openPivot':   S.modal = {type:'pivot', seg:'', idea:S.idea, style:S.style}; render(); break;
+    case 'help':        S.modal = {type:'help'}; render(); break;
+    case 'close':       S.modal = null; render(); break;
+    case 'confirmIterate': {
+      const m = S.modal; S.modal = null;
+      if (m.remove && m.add){ S.features = S.features.filter(f => f !== m.remove).concat(m.add); }
+      S.style = m.style; startTest('Iterate', ITER_COST); break; }
+    case 'confirmAdd': {
+      const m = S.modal; S.modal = null; S.features.push(m.add); startTest('Add a feature', ADD_COST); break; }
+    case 'confirmPivot': {
+      const m = S.modal; S.modal = null;
+      S.segment = m.seg; S.idea = m.idea.trim(); S.style = m.style; S.pivots++;
+      S.ret = 8; S.vd = 10; S.sat = 40; S.streak = 0;
+      startTest('Pivot', PIVOT_COST); break; }
+    case 'restart': S = newState(); render(); window.scrollTo(0,0); break;
+  }
+}
+function val(id){ const e = document.getElementById(id); return e ? e.value : ''; }
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-a]');
+  if (!b || b.disabled) return;
+  act(b.dataset.a, b.dataset);
+});
+document.addEventListener('change', e => {
+  const k = e.target.dataset && e.target.dataset.m;
+  if (k && S.modal){ S.modal[k] = e.target.value; render(); }
+});
+document.addEventListener('input', e => {
+  const k = e.target.dataset && e.target.dataset.m;
+  if (k === 'idea' && S.modal) S.modal.idea = e.target.value;
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && S.modal){ S.modal = null; render(); }
+});
+
+/* =====================  VIEWS  ===================== */
+const STEPS = ['Customer','Build','Test','Feedback','Decide'];
+function stepIndex(){ return ({customer:1, build:2, testing:3, result:4, decide:5})[S.screen] || 0; }
+
+function topBar(){
+  if (S.screen === 'intro') return '';
+  const pct = Math.round(S.month / MAX_MONTH * 100);
+  const bad = S.cash <= 10000 ? ' bad' : '';
+  const steps = stepIndex() ? `<ol class="steps" aria-label="The loop">${STEPS.map((s,i) =>
+      `<li class="${i+1 === stepIndex() ? 'on' : (i+1 < stepIndex() ? 'done' : '')}">${i+1}. ${s}</li>`).join('')}</ol>` : '';
+  return `<div class="top">
+    <div class="top-row">
+      <div class="brand">Fit or Pivot${S.name ? `<span>${esc(S.name)}</span>` : ''}</div>
+      <div class="pills">
+        <span class="pill">💰 ${eur(S.cash)}</span>
+        <span class="pill${bad}">⏳ ${runway()} mo left</span>
+        <button class="linkbtn" data-a="help">How to play</button>
+      </div>
+    </div>
+    <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="12" aria-valuenow="${S.month}" aria-label="Month"><i style="width:${pct}%"></i></div>
+    <div class="bar-label"><span>${S.month === 0 ? 'Set-up' : 'Month ' + S.month + ' of ' + MAX_MONTH}</span><span>Burn: ${eur(BURN)} per month</span></div>
+  </div>${steps}`;
+}
+
+function viewIntro(){
+  return `<div class="hero">
+    <div class="tag">A STARTUP FOUNDER SIMULATION</div>
+    <h1>Fit or Pivot</h1>
+    <p>You have <b>€100k</b> and <b>12 months</b>. Find a customer who really needs your product (<b>product-market fit</b>) before the cash runs out.</p>
+    <div class="loopline"><span>1 Choose customer</span><span>2 Build MVP</span><span>3 Test</span><span>4 Read feedback</span><span>5 Decide</span></div>
+    <p class="small">Every month repeats steps 3 to 5. Takes about 5 to 10 minutes.</p>
+    <button class="btn big" data-a="start">Start playing ▶</button>
+  </div>
+  <div class="grid g3">
+    <div class="card"><h3>🎯 How you win</h3><p>Pass the fit test <b>3 months in a row</b>:<br>• 40% of users would be <i>very disappointed</i> without your app<br>• 30% still use it</p></div>
+    <div class="card"><h3>💸 What it costs</h3><p>Every month burns €5k. Building, changing and pivoting cost extra. Spend wisely: cash left is your score.</p></div>
+    <div class="card"><h3>📚 Losing is fine</h3><p>If you run out of cash or time, you get a debrief that shows which signals you missed.</p></div>
+  </div>
+  <footer>Pretotype for testing. Numbers are simplified for learning.</footer>`;
+}
+
+function viewSetup(){
+  const styles = Object.entries(STYLES).map(([k,s]) => `
+    <label class="choice ${S.style === k ? 'sel' : ''}"><input type="radio" name="style" ${S.style === k ? 'checked' : ''} data-a="style" data-v="${k}">
+      <span class="t">${s.emoji} ${s.label}</span><span class="d">${s.desc}</span></label>`).join('');
+  return `${topBar()}
+  <div class="card">
+    <h2>Create your product</h2>
+    <p class="muted">You are building an app that helps people organise their work. Make it yours. Your name and idea will show up in the customer feedback.</p>
+    <label class="field" for="name">Product name</label>
+    <input id="name" type="text" maxlength="24" placeholder="e.g. Flowly" value="${esc(S.name)}" autocomplete="off">
+    <label class="field" for="idea">Your idea in one sentence</label>
+    <input id="idea" type="text" maxlength="110" placeholder="What does it do, and for whom?" value="${esc(S.idea)}" autocomplete="off">
+    <label class="field">Pick a tone <span class="muted small">(customers have taste, and different customers like different tones)</span></label>
+    <div class="grid g3">${styles}</div>
+    ${S.setupError ? `<div class="note" role="alert">${esc(S.setupError)}</div>` : ''}
+    <div class="row" style="margin-top:18px">
+      <button class="btn alt" data-a="surprise">🎲 Surprise me</button>
+      <button class="btn right" data-a="setupDone">Next: choose your customer</button>
+    </div>
+  </div>`;
+}
+
+function notesHtml(segKey){
+  const n = S.notes[segKey] || [];
+  if (!n.length) return '';
+  return `<div class="note"><b>Interview notes</b>${n.map(t => `<div>${t}</div>`).join('')}</div>`;
+}
+
+function viewCustomer(){
+  const cards = Object.entries(SEG).map(([k,s]) => {
+    const left = s.interview.length - (S.notes[k] || []).length;
+    return `<div class="card seg" style="margin:0">
+      <div class="emoji">${s.emoji}</div><h3>${s.name}</h3>
+      <p class="muted">${s.surface}</p>
+      ${notesHtml(k)}
+      <div class="row">
+        <button class="btn alt" data-a="interview" data-seg="${k}" ${left <= 0 || S.cash < INTERVIEW_COST ? 'disabled' : ''}>Interview <span class="cost">${eur(INTERVIEW_COST)}</span></button>
+        <button class="btn" data-a="choose" data-seg="${k}">Choose</button>
+      </div></div>`;
+  }).join('');
+  return `${topBar()}
+  <h2>Who is your customer?</h2>
+  <p class="muted">Customers say one thing and need another. An interview costs money, but it can show what they actually need. Pick one segment to build for.</p>
+  <div class="grid g3">${cards}</div>`;
+}
+
+function viewBuild(){
+  const seg = SEG[S.segment];
+  const cards = Object.entries(FEATURES).map(([k,f]) => {
+    const on = S.pick.includes(k);
+    return `<button type="button" class="choice ${on ? 'sel' : ''}" data-a="feat" data-f="${k}" aria-pressed="${on}" style="text-align:left;font:inherit">
+      <span class="t">${f.icon} ${f.name}${on ? ' ✓' : ''}</span><span class="d">${f.desc}</span></button>`;
+  }).join('');
+  return `${topBar()}
+  <h2>Build your MVP</h2>
+  <p class="muted">An MVP is the smallest product you can test. Your customer: <b>${seg.emoji} ${seg.name}</b>. Choose <b>exactly 2 features</b>. Each costs ${eur(FEATURE_COST)}.</p>
+  ${notesHtml(S.segment)}
+  <div class="grid g3" style="margin:14px 0">${cards}</div>
+  <div class="row">
+    <span class="pill">${S.pick.length} of 2 chosen · cost ${eur(S.pick.length * FEATURE_COST)}</span>
+    <button class="btn right" data-a="launch" ${S.pick.length === 2 ? '' : 'disabled'}>Launch and test with customers</button>
+  </div>`;
+}
+
+function viewTesting(){
+  return `${topBar()}<div class="card center" style="padding:48px 20px">
+    <div class="spinner" aria-hidden="true"></div>
+    <h2>Rolling the dice…</h2><p class="muted">Real customers are trying ${pName()}.</p></div>`;
+}
+
+function delta(cur, prev, suffix){
+  const d = cur - prev;
+  if (d === 0) return `<span class="delta flat">no change</span>`;
+  return `<span class="delta ${d > 0 ? 'up' : 'down'}">${d > 0 ? '▲ +' : '▼ '}${d}${suffix || ''}</span>`;
+}
+
+function kpis(){
+  const p = S.prev || {sat:S.sat, ret:S.ret, vd:S.vd, cash:S.cash};
+  return `<div class="grid g5">
+    <div class="kpi"><div class="l">Cash left</div><div class="v">${eur(S.cash)}</div><span class="delta flat">${runway()} months runway</span></div>
+    <div class="kpi"><div class="l">Satisfaction</div><div class="v">${S.sat}%</div>${delta(S.sat, p.sat)}</div>
+    <div class="kpi ${S.ret >= 30 ? 'ok' : ''}"><div class="l">Still active (target 30%)</div><div class="v">${S.ret}%</div>${delta(S.ret, p.ret)}</div>
+    <div class="kpi ${S.vd >= 40 ? 'ok' : ''}"><div class="l">Very disappointed without it (target 40%)</div><div class="v">${S.vd}%</div>${delta(S.vd, p.vd)}</div>
+    <div class="kpi"><div class="l">Fit streak</div><div class="v">${S.streak} / 3</div><span class="delta flat">months in a row</span></div>
+  </div>`;
+}
+
+function chart(){
+  const H = S.history, W = 600, Ht = 230, x0 = 40, x1 = 570, yb = 195, yt = 15;
+  const X = m => x0 + (m - 1) * (x1 - x0) / (MAX_MONTH - 1);
+  const Y = v => yb - v * (yb - yt) / 100;
+  const line = (key, color, dash) => {
+    if (!H.length) return '';
+    const pts = H.map(r => `${X(r.month).toFixed(1)},${Y(r[key]).toFixed(1)}`).join(' ');
+    return `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="4" stroke-linejoin="round" ${dash ? 'stroke-dasharray="2 5" stroke-linecap="round"' : ''}/>` +
+      (dash ? '' : H.map(r => `<circle cx="${X(r.month).toFixed(1)}" cy="${Y(r[key]).toFixed(1)}" r="4" fill="${color}"/>`).join(''));
+  };
+  const grid = [0,25,50,75,100].map(v => `<line x1="${x0}" x2="${x1}" y1="${Y(v)}" y2="${Y(v)}" stroke="#cdbf9c"/><text x="${x0 - 6}" y="${Y(v) + 4}" text-anchor="end" font-size="11" fill="#5d5446">${v}%</text>`).join('');
+  const xl = Array.from({length:MAX_MONTH}, (_,i) => `<text x="${X(i + 1)}" y="${yb + 16}" text-anchor="middle" font-size="11" fill="#5d5446">${i + 1}</text>`).join('');
+  const piv = H.filter(r => r.decision === 'Pivot').map(r =>
+    `<line x1="${X(r.month)}" x2="${X(r.month)}" y1="${yt}" y2="${yb}" stroke="#1d1a16" stroke-dasharray="4 4"/><text x="${X(r.month) + 3}" y="${yt + 10}" font-size="11" fill="#2b5fa8">pivot</text>`).join('');
+  const th = `<line x1="${x0}" x2="${x1}" y1="${Y(40)}" y2="${Y(40)}" stroke="#d9412b" stroke-dasharray="6 4"/><text x="${x1 + 3}" y="${Y(40) + 4}" font-size="10" fill="#d9412b">40%</text>
+              <line x1="${x0}" x2="${x1}" y1="${Y(30)}" y2="${Y(30)}" stroke="#2b5fa8" stroke-dasharray="6 4"/><text x="${x1 + 3}" y="${Y(30) + 4}" font-size="10" fill="#2b5fa8">30%</text>`;
+  const last = H[H.length - 1];
+  return `<svg viewBox="0 0 ${W} ${Ht}" width="100%" role="img" aria-label="Chart over time. Latest: still active ${last ? last.ret : 0} percent, very disappointed ${last ? last.vd : 0} percent, satisfaction ${last ? last.sat : 0} percent.">
+    ${grid}${xl}${piv}${th}${line('sat', '#8a7f6a', true)}${line('vd', '#d9412b')}${line('ret', '#2b5fa8')}
+    <text x="${(x0 + x1) / 2}" y="${Ht - 3}" text-anchor="middle" font-size="11" fill="#5d5446">Month</text></svg>
+    <div class="chips" style="margin-top:4px">
+      <span class="chip" style="color:#2b5fa8">━ Still active</span>
+      <span class="chip" style="color:#d9412b">━ Very disappointed</span>
+      <span class="chip" style="color:#5d5446">··· Satisfaction (compliments)</span></div>`;
+}
+
+function viewResult(){
+  const seg = SEG[S.segment], e = endState();
+  const m = S.msg;
+  const pretty = S.features.map(f => `<span class="chip">${FEATURES[f].icon} ${FEATURES[f].name}</span>`).join('');
+  return `${topBar()}
+  <h2>Month ${S.month} results</h2>
+  <p class="muted"><b>${S.lastDecision}</b> · Customer: ${seg.emoji} ${seg.name} · Tone: ${STYLES[S.style].label}</p>
+  <div class="chips" style="margin-bottom:12px">${pretty}</div>
+  <div class="banner ${m.cls}" role="status">${m.text}</div>
+  ${kpis()}
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card" style="margin:0"><h3>What customers said</h3>
+      ${S.quotes.map(q => `<div class="quote">${q}</div>`).join('')}
+      <p class="small muted">Look for what customers <i>do</i>, not just what they say.</p></div>
+    <div class="card" style="margin:0"><h3>The trend so far</h3>${chart()}</div>
+  </div>
+  ${notesHtml(S.segment)}
+  <div class="row" style="margin-top:16px"><button class="btn big right" data-a="next">${e ? 'See the ending' : 'Decide the next step'}</button></div>`;
+}
+
+function optCard(title, cost, desc, action, disabled, why){
+  return `<div class="card opt" style="margin:0"><h3>${title}${cost ? `<span class="cost">${eur(cost)}</span>` : '<span class="cost">free</span>'}</h3>
+    <p class="muted">${desc}</p>
+    <button class="btn" data-a="${action}" ${disabled ? 'disabled' : ''}>Choose</button>
+    ${disabled && why ? `<div class="small muted" style="margin-top:6px">${why}</div>` : ''}</div>`;
+}
+
+function viewDecide(){
+  const seg = SEG[S.segment];
+  const pretty = S.features.map(f => `<span class="chip">${FEATURES[f].icon} ${FEATURES[f].name}</span>`).join('');
+  const left = seg.interview.length - (S.notes[S.segment] || []).length;
+  return `${topBar()}
+  <h2>What do you do next?</h2>
+  <p class="muted">Persevere, iterate, add a feature, or pivot? Every choice costs money, and every month burns ${eur(BURN)}. Look at the trend before you decide.</p>
+  <div class="row" style="margin-bottom:12px"><span class="chip">${seg.emoji} ${seg.name}</span>${pretty}<span class="chip">Tone: ${STYLES[S.style].label}</span></div>
+  ${kpis()}
+  ${notesHtml(S.segment)}
+  <div class="grid g2" style="margin-top:16px">
+    ${optCard('Persevere', 0, 'Change nothing and see what another month shows. Good when the numbers are improving.', 'persevere', false)}
+    ${optCard('Iterate on the MVP', ITER_COST, 'Swap one feature for another, and/or change the tone.', 'openIterate', S.cash < ITER_COST, 'Not enough cash.')}
+    ${optCard('Add a feature', ADD_COST, 'Expensive. You can have at most 4 features.', 'openAdd', S.features.length >= MAX_FEATURES || S.cash < ADD_COST, S.features.length >= MAX_FEATURES ? 'You already have 4 features.' : 'Not enough cash.')}
+    ${optCard('Pivot', PIVOT_COST, 'Aim at a different customer and rewrite your idea. Your numbers restart from zero.', 'openPivot', S.cash < PIVOT_COST, 'Not enough cash.')}
+  </div>
+  <div class="card" style="margin-top:16px"><div class="row"><div><b>Not sure what they need?</b><div class="muted small">Interview ${seg.name.toLowerCase()} to learn more about their real problem.</div></div>
+    <button class="btn alt right" data-a="interview" data-seg="${S.segment}" ${left <= 0 || S.cash < INTERVIEW_COST ? 'disabled' : ''}>${left <= 0 ? 'No more to learn' : 'Interview ' + '<span class="cost">' + eur(INTERVIEW_COST) + '</span>'}</button></div></div>`;
+}
+
+function insights(){
+  const H = S.history, L = [], seg = SEG[S.segment];
+  if (S.ended === 'win')
+    L.push(`You found fit in month ${S.month} with <b>${seg.name}</b> and the features <b>${S.features.map(f => FEATURES[f].name).join(', ')}</b>. That worked because the product solved their real problem.`);
+  if (S.ended === 'broke')
+    L.push(`You ran out of cash in month ${S.month}. Every month costs ${eur(BURN)}, so a month without learning something is an expensive month.`);
+  if (S.ended === 'time')
+    L.push('You reached month 12 with cash but no fit. Not finding fit does not mean you failed: now you know which assumptions were wrong.');
+  const gapRow = H.reduce((a, r) => (r.sat - r.ret > (a ? a.sat - a.ret : -1) ? r : a), null);
+  if (gapRow && gapRow.sat - gapRow.ret >= 18)
+    L.push(`In month ${gapRow.month} satisfaction was ${gapRow.sat}% but only ${gapRow.ret}% were still active. Compliments are not fit. Retention is the signal to trust.`);
+  const stuck = H.filter(r => r.ret < 30 && r.decision === 'Persevere').length;
+  if (stuck >= 3)
+    L.push(`You persevered ${stuck} times while retention was below 30%. When the evidence does not improve, change something.`);
+  if (S.pivots === 0 && S.ended !== 'win' && S.ret < 30)
+    L.push('You never pivoted. A pivot is expensive, but so is waiting. Next time, try a different customer sooner.');
+  if (S.pivots >= 2)
+    L.push(`You pivoted ${S.pivots} times. Each pivot restarts your numbers, so give a new direction a few months before judging it.`);
+  if (S.interviews === 0)
+    L.push('You never interviewed customers. Two interviews cost €4k and tell you the real problem, which is cheaper than building the wrong feature.');
+  return L.slice(0, 4);
+}
+
+function viewEnd(){
+  const e = S.ended, seg = SEG[S.segment];
+  const T = {
+    win:{cls:'good', h:'🎉 Product-market fit!', p:'You passed the fit test 3 months in a row.'},
+    broke:{cls:'bad', h:'💸 Out of cash', p:'Your runway hit zero before you found fit.'},
+    time:{cls:'warn', h:'⏳ Time is up', p:'Month 12 and still no fit. You are alive, but not there yet.'}}[e];
+  const score = e === 'win' ? S.cash + 2000 * (MAX_MONTH - S.month) : null;
+  const tried = [...new Set(S.history.map(r => r.segment))];
+  const rows = S.history.map(r => `<tr><td>${r.month}</td><td>${r.decision}</td><td>${SEG[r.segment].name}</td><td>${r.sat}%</td><td>${r.ret}%</td><td>${r.vd}%</td><td>${eur(r.cash)}</td></tr>`).join('');
+  return `${topBar()}
+  <div class="banner ${T.cls}" style="font-size:1.1rem"><div style="font-size:1.5rem">${T.h}</div>${T.p}${score !== null ? `<div style="margin-top:6px">Score: <b>€${score.toLocaleString('en-GB')}</b> (cash left + a bonus for each month you saved)</div>` : ''}</div>
+  <div class="card"><h3>Debrief: what customers really needed</h3>
+    ${tried.map(k => `<p><b>${SEG[k].emoji} ${SEG[k].name}</b> needed: ${SEG[k].hidden}<br>
+      <span class="muted">Best features: ${FEATURES[SEG[k].primary].icon} ${FEATURES[SEG[k].primary].name} and ${FEATURES[SEG[k].secondary].icon} ${FEATURES[SEG[k].secondary].name}. Preferred tone: ${STYLES[SEG[k].style].label}.</span></p>`).join('')}
+    <p class="muted small">“Polished design” never solved a problem for anyone. It only made people say nice things.</p></div>
+  <div class="card"><h3>What your decisions taught you</h3><ul>${insights().map(t => `<li>${t}</li>`).join('')}</ul></div>
+  <div class="card"><h3>Your journey</h3>${chart()}
+    <div class="scroll" style="margin-top:10px"><table><thead><tr><th>Month</th><th>Decision</th><th>Customer</th><th>Satisfied</th><th>Active</th><th>Very disapp.</th><th>Cash</th></tr></thead><tbody>${rows}</tbody></table></div></div>
+  <div class="card"><h3>Questions for the tester</h3><ol>
+    <li>Was the choice between persevere, iterate and pivot clear and fair?</li>
+    <li>Did the budget pressure motivate you without frustrating you?</li>
+    <li>Is twelve rounds the right length?</li></ol>
+    <p class="muted small">Please send your answers to the team. Thank you!</p></div>
+  <div class="row"><button class="btn big" data-a="restart">Play again</button></div>`;
+}
+
+function viewModal(){
+  const m = S.modal; if (!m) return '';
+  let body = '';
+  if (m.type === 'help'){
+    body = `<h2>How to play</h2>
+      <p>You are a startup founder. Find a customer who truly needs your app before the cash runs out.</p>
+      <ol><li><b>Choose a customer</b> and <b>build an MVP</b> with 2 features.</li>
+      <li>Each month customers <b>test</b> it and you read the <b>feedback</b>.</li>
+      <li><b>Decide</b>: persevere, iterate, add a feature or pivot.</li></ol>
+      <p><b>Win:</b> 40% of users “very disappointed” without your app <i>and</i> 30% still active, 3 months in a row.<br>
+      <b>Lose:</b> cash hits €0, or month 12 passes without fit. Either way you get a debrief.</p>
+      <div class="row"><button class="btn right" data-a="close">Got it</button></div>`;
+  } else if (m.type === 'iterate'){
+    const cur = S.features.map(f => `<option value="${f}" ${m.remove === f ? 'selected' : ''}>${FEATURES[f].name}</option>`).join('');
+    const rest = Object.keys(FEATURES).filter(f => !S.features.includes(f)).map(f => `<option value="${f}" ${m.add === f ? 'selected' : ''}>${FEATURES[f].name}</option>`).join('');
+    const styles = Object.entries(STYLES).map(([k,s]) => `<label class="choice ${m.style === k ? 'sel' : ''}"><input type="radio" name="mstyle" data-m="style" value="${k}" ${m.style === k ? 'checked' : ''}><span class="t">${s.emoji} ${s.label}</span></label>`).join('');
+    const ok = (m.remove && m.add) || m.style !== S.style;
+    body = `<h2>Iterate on the MVP <span class="cost">${eur(ITER_COST)}</span></h2>
+      <p class="muted">Swap one feature and/or change the tone.</p>
+      <label class="field" for="rm">Remove</label><select id="rm" data-m="remove"><option value="">(keep all)</option>${cur}</select>
+      <label class="field" for="ad">Replace with</label><select id="ad" data-m="add"><option value="">(nothing)</option>${rest}</select>
+      <label class="field">Tone</label><div class="grid g3">${styles}</div>
+      ${(m.remove && !m.add) || (!m.remove && m.add) ? '<div class="note">Choose both a feature to remove and one to add.</div>' : ''}
+      <div class="row" style="margin-top:16px"><button class="btn alt" data-a="close">Cancel</button>
+      <button class="btn right" data-a="confirmIterate" ${ok && !((m.remove && !m.add) || (!m.remove && m.add)) ? '' : 'disabled'}>Iterate and test</button></div>`;
+  } else if (m.type === 'add'){
+    const opts = Object.keys(FEATURES).filter(f => !S.features.includes(f)).map(f => `<label class="choice ${m.add === f ? 'sel' : ''}" style="margin-bottom:8px"><input type="radio" name="addf" data-m="add" value="${f}" ${m.add === f ? 'checked' : ''}><span class="t">${FEATURES[f].icon} ${FEATURES[f].name}</span><span class="d">${FEATURES[f].desc}</span></label>`).join('');
+    body = `<h2>Add a feature <span class="cost">${eur(ADD_COST)}</span></h2>${opts}
+      <div class="row" style="margin-top:12px"><button class="btn alt" data-a="close">Cancel</button><button class="btn right" data-a="confirmAdd" ${m.add ? '' : 'disabled'}>Add and test</button></div>`;
+  } else if (m.type === 'pivot'){
+    const segs = Object.entries(SEG).filter(([k]) => k !== S.segment).map(([k,s]) => `<label class="choice ${m.seg === k ? 'sel' : ''}" style="margin-bottom:8px"><input type="radio" name="pseg" data-m="seg" value="${k}" ${m.seg === k ? 'checked' : ''}><span class="t">${s.emoji} ${s.name}</span><span class="d">${s.surface}</span>${(S.notes[k] || []).map(t => `<span class="d" style="color:var(--ink)">${t}</span>`).join('')}</label>`).join('');
+    const styles = Object.entries(STYLES).map(([k,s]) => `<label class="choice ${m.style === k ? 'sel' : ''}"><input type="radio" name="pstyle" data-m="style" value="${k}" ${m.style === k ? 'checked' : ''}><span class="t">${s.emoji} ${s.label}</span></label>`).join('');
+    body = `<h2>Pivot <span class="cost">${eur(PIVOT_COST)}</span></h2>
+      <p class="muted">Pick a new customer. Your numbers restart, but you keep your features.</p>${segs}
+      <label class="field" for="pidea">Rewrite your idea</label><input id="pidea" type="text" maxlength="110" data-m="idea" value="${esc(m.idea)}">
+      <label class="field">Tone</label><div class="grid g3">${styles}</div>
+      <div class="row" style="margin-top:16px"><button class="btn alt" data-a="close">Cancel</button><button class="btn right" data-a="confirmPivot" ${m.seg ? '' : 'disabled'}>Pivot and test</button></div>`;
+  }
+  return `<div class="overlay" role="dialog" aria-modal="true"><div class="modal">${body}</div></div>`;
+}
+
+/* =====================  RENDER  ===================== */
+function render(){
+  const views = {intro:viewIntro, setup:viewSetup, customer:viewCustomer, build:viewBuild,
+                 testing:viewTesting, result:viewResult, decide:viewDecide, end:viewEnd};
+  const active = document.activeElement && document.activeElement.id;
+  $app.innerHTML = views[S.screen]() + viewModal();
+  if (S.screen === 'setup' && !S.modal && active){ const e = document.getElementById(active); if (e) e.focus(); }
+  if (S.modal){ const f = $app.querySelector('.modal select, .modal input[type=text], .modal .btn'); if (f) f.focus(); }
+  document.title = 'Fit or Pivot';
+}
+render();
+</script>
+</body>
+</html>
