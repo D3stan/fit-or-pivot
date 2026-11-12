@@ -236,6 +236,8 @@ describe('linkSentence', () => {
     expect(linkSentence('Iterate', before, after(29))).toBe('You swapped Analytics dashboard for Invoice export: retention rose 9 points — that change mattered to student freelancers.');
     expect(linkSentence('Iterate', before, after(19))).toContain('barely moved (-1) — that swap didn’t change much');
     expect(linkSentence('Iterate', before, after(12))).toContain('fell 8 points — student freelancers miss what you took out.');
+    expect(linkSentence('Iterate', b({ features: ['invoice', 'stats'] }), b({ features: ['invoice', 'design'], ret: 26 })))
+      .toBe('You swapped Analytics dashboard for Polished design: retention rose 6 points, but that is the earlier trend — the swap didn’t drive it.');
     expect(linkSentence('Iterate', before, after(29, 'minimal'))).toMatch(/^You swapped Analytics dashboard for Invoice export and went minimal:/);
   });
 
@@ -253,6 +255,7 @@ describe('linkSentence', () => {
     expect(linkSentence('Add a feature', before, after('team', 21))).toContain('more product didn’t create more value.');
     expect(linkSentence('Add a feature', before, after('team', 16))).toContain('more product made it worse.');
     expect(linkSentence('Add a feature', before, after('design', 21, 62))).toBe('You added Polished design: satisfaction rose but retention didn’t — compliments, not fit.');
+    expect(linkSentence('Add a feature', before, after('design', 27))).toBe('You added Polished design: retention rose 7 points, but that is the earlier trend — the new feature didn’t drive it.');
   });
 
   it('pivot: compares with the restart point, up, flat, down', () => {

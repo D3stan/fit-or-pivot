@@ -85,6 +85,10 @@ export function linkSentence(decision: Decision, before: State, after: State): s
   // Satisfaction up without retention: people are being nice, not coming back.
   const polite = after.sat - before.sat > NOISE && dir !== 'up';
   const politeEnd = ': satisfaction rose but retention didn’t — compliments, not fit.';
+  // Retention keeps drifting toward last month's target; don't credit a change that added nothing.
+  const coasting = dir === 'up' && after.segment === before.segment
+    && needScore(after.segment!, after.features) <= needScore(after.segment!, before.features);
+  const coastEnd = (what: string) => `: ${moved}, but that is the earlier trend — ${what} didn’t drive it.`;
 
   switch (decision) {
     case 'Persevere':
@@ -102,6 +106,7 @@ export function linkSentence(decision: Decision, before: State, after: State): s
     case 'Add a feature': {
       const did = `You added ${after.features.filter(f => !before.features.includes(f)).map(name).join(' and ')}`;
       if (polite) return did + politeEnd;
+      if (coasting) return did + coastEnd('the new feature');
       return `${did}: ${moved} — ${pick('this time more product did help.', 'more product didn’t create more value.', 'more product made it worse.')}`;
     }
     case 'Iterate': {
@@ -112,6 +117,7 @@ export function linkSentence(decision: Decision, before: State, after: State): s
       const did = swap ? `You swapped ${removed} for ${added}${tone ? ` and went ${tone}` : ''}`
         : tone ? `You switched to a ${tone} tone` : 'You iterated';
       if (polite) return did + politeEnd;
+      if (swap && coasting) return did + coastEnd('the swap');
       if (swap) return `${did}: ${moved} — ${pick(`that change mattered to ${seg}.`, `that swap didn’t change much for ${seg}.`, `${seg} miss what you took out.`)}`;
       return `${did}: ${moved} — ${pick(`it suits ${seg} better.`, 'tone alone won’t fix the product.', `${seg} liked the old tone better.`)}`;
     }
