@@ -9,6 +9,9 @@ export function segmentOf(s: State): Segment {
   return SEGMENTS[s.segment];
 }
 
+/** Months left on the game clock (not cash). */
+export const monthsLeft = (s: State): number => MAX_MONTH - s.month;
+
 export const runway = (s: State): number => Math.max(0, Math.floor(s.cash / BURN));
 
 export const isFit = (vd: number, ret: number): boolean => vd >= VD_TARGET && ret >= RET_TARGET;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { reduce } from '../src/game/actions';
 import { BURN, START_CASH } from '../src/game/config';
-import { endState, linkSentence, makeQuotes, needScore, runMonth } from '../src/game/engine';
+import { endState, monthsLeft, linkSentence, makeQuotes, needScore, runMonth } from '../src/game/engine';
 import { newState } from '../src/game/state';
 import type { FeatureKey, SegmentKey, State } from '../src/game/types';
 
@@ -276,5 +276,17 @@ describe('linkSentence', () => {
       oneSentence(t);
       expect(t).not.toMatch(/weight|need|0\.\d/i);
     }
+  });
+});
+
+describe('setup and clock', () => {
+  it('time left follows the month, not cash', () => {
+    expect(monthsLeft(newState())).toBe(12);
+    expect(monthsLeft({ ...newState(), month: 1, cash: 85000 })).toBe(11);
+  });
+  it('surprise clears the name warning', () => {
+    const s = reduce({ ...newState(), screen: 'setup' }, { type: 'setupDone', name: ' ', idea: '' }, fixed(0));
+    expect(s.setupError).not.toBe('');
+    expect(reduce(s, { type: 'surprise' }, fixed(0)).setupError).toBe('');
   });
 });

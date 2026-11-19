@@ -1,6 +1,6 @@
 import { esc, eur } from '../../format';
 import { BURN, LOW_CASH, MAX_MONTH } from '../../game/config';
-import { runway } from '../../game/engine';
+import { monthsLeft } from '../../game/engine';
 import type { Screen, State } from '../../game/types';
 
 const STEPS = ['Customer', 'Build', 'Test', 'Feedback', 'Decide'];
@@ -18,7 +18,7 @@ export function topBar(s: State): string {
       <div class="brand">Fit or Pivot${s.name ? `<span>${esc(s.name)}</span>` : ''}</div>
       <div class="pills">
         <span class="pill">💰 ${eur(s.cash)}</span>
-        <span class="pill${bad}">⏳ ${runway(s)} mo left</span>
+        <span class="pill${bad}">⏳ ${monthsLeft(s)} mo left</span>
         <button class="linkbtn" data-a="help">How to play</button>
       </div>
     </div>

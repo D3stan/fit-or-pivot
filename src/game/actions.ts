@@ -44,9 +44,9 @@ export function reduce(s: State, a: Action, rng: Rng): State {
     case 'start': return { ...s, screen: 'setup' };
     case 'surprise': {
       const r = SURPRISE[Math.floor(rng() * SURPRISE.length)];
-      return { ...s, name: r.name, idea: r.idea };
+      return { ...s, name: r.name, idea: r.idea, setupError: '' };
     }
-    case 'style': return { ...s, name: a.name, idea: a.idea, style: a.style };
+    case 'style': return { ...s, name: a.name, idea: a.idea, style: a.style, setupError: '' };
     case 'setupDone': {
       const name = a.name.trim(), idea = a.idea.trim();
       if (!name) return { ...s, name, idea, setupError: 'Give your product a name first (or press “Surprise me”).' };
