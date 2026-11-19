@@ -70,7 +70,7 @@ const StateSummarySchema = z.object({
 
 const TelemetryEventSchema = z.object({
   seq: z.number().int().min(0),
-  ts: z.number().finite().min(0),
+  ts: z.number().finite().min(0).max(8_640_000_000_000_000),
   sessionId: z.string().min(1).max(128),
   runId: z.string().min(1).max(128),
   eventType: EventTypeSchema,
@@ -82,11 +82,23 @@ const TelemetryEventSchema = z.object({
   state: StateSummarySchema.optional(),
 });
 
-const TelemetryBatchSchema = z.object({
-  sessionId: z.string().min(1).max(128),
-  meta: SessionMetaSchema.optional(),
-  events: z.array(TelemetryEventSchema).min(1).max(100),
-});
+const TelemetryBatchSchema = z
+  .object({
+    sessionId: z.string().min(1).max(128),
+    meta: SessionMetaSchema.optional(),
+    events: z.array(TelemetryEventSchema).min(1).max(100),
+  })
+  .superRefine((batch, ctx) => {
+    for (let i = 0; i < batch.events.length; i += 1) {
+      if (batch.events[i]!.sessionId !== batch.sessionId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['events', i, 'sessionId'],
+          message: 'Event sessionId must match batch sessionId',
+        });
+      }
+    }
+  });
 
 export async function handleTelemetryPost(
   req: IncomingMessage,

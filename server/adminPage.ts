@@ -500,7 +500,9 @@ export function renderAdminPage(): string {
 
       function fmtTime(ms) {
         if (!ms || !Number.isFinite(Number(ms))) return '-';
-        return new Date(Number(ms)).toISOString().replace('T', ' ').slice(0, 19);
+        const d = new Date(Number(ms));
+        if (Number.isNaN(d.getTime())) return '-';
+        return d.toISOString().replace('T', ' ').slice(0, 19);
       }
 
       function fmtNum(n) {
@@ -510,7 +512,7 @@ export function renderAdminPage(): string {
 
       function fmtCash(n) {
         if (n === null || n === undefined || !Number.isFinite(Number(n))) return '-';
-        return '$' + Number(n).toLocaleString();
+        return '€' + Number(n).toLocaleString();
       }
 
       function fmtPct(rate) {

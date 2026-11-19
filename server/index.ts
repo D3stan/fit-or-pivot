@@ -101,7 +101,12 @@ async function routeRequest(
 ): Promise<void> {
   const method = (req.method ?? 'GET').toUpperCase();
   const host = req.headers.host || 'localhost';
-  const url = new URL(req.url || '/', `http://${host}`);
+  let url: URL;
+  try {
+    url = new URL(req.url || '/', `http://${host}`);
+  } catch {
+    throw new HttpError(400, 'Invalid request URL');
+  }
   const { pathname } = url;
 
   if ((method === 'GET' || method === 'HEAD') && pathname === '/health') {
