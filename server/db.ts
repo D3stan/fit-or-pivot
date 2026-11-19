@@ -338,6 +338,13 @@ export function ingestBatch(
       WHERE run_id = ?
     `);
 
+    const updateRunCountOnly = db.prepare(`
+      UPDATE runs SET
+        event_count = event_count + 1,
+        updated_at = MAX(updated_at, ?)
+      WHERE run_id = ?
+    `);
+
     const insertMonth = db.prepare(`
       INSERT OR IGNORE INTO run_months (
         run_id, month, ts, decision, segment, features_json, style,
@@ -376,7 +383,9 @@ export function ingestBatch(
 
       inserted += 1;
 
-      if (ev.state) {
+      if (ev.actionType === 'restart') {
+        updateRunCountOnly.run(ev.ts, ev.runId);
+      } else if (ev.state) {
         const s = ev.state;
         const endedReason = s.ended ?? null;
         let winScore: number | null = null;
@@ -794,20 +803,26 @@ export function getFrictionSignals(db: DatabaseSync, opts?: TimeRangeOpts) {
 
   const disabledClicks = db
     .prepare(`
-      SELECT screen_from AS screen, action_type AS actionType, COUNT(*) AS count
+      SELECT
+        screen_from AS screen,
+        COALESCE(action_type, json_extract(payload_json, '$.action')) AS actionType,
+        COUNT(*) AS count
       FROM events
       ${wherePrefix} event_type = 'ui.disabled_click'
-      GROUP BY screen_from, action_type
+      GROUP BY screen_from, COALESCE(action_type, json_extract(payload_json, '$.action'))
       ORDER BY count DESC
     `)
     .all(...timeFilter.params) as Array<{ screen: string | null; actionType: string | null; count: number }>;
 
   const modalCancellations = db
     .prepare(`
-      SELECT screen_from AS screen, action_type AS actionType, COUNT(*) AS count
+      SELECT
+        screen_from AS screen,
+        COALESCE(action_type, json_extract(payload_json, '$.modalType')) AS actionType,
+        COUNT(*) AS count
       FROM events
       ${wherePrefix} event_type = 'ui.modal_cancelled'
-      GROUP BY screen_from, action_type
+      GROUP BY screen_from, COALESCE(action_type, json_extract(payload_json, '$.modalType'))
       ORDER BY count DESC
     `)
     .all(...timeFilter.params) as Array<{ screen: string | null; actionType: string | null; count: number }>;
@@ -827,11 +842,10 @@ export function getFrictionSignals(db: DatabaseSync, opts?: TimeRangeOpts) {
     .prepare(`
       SELECT COUNT(*) AS count
       FROM events
-      ${wherePrefix} event_type = 'ui.disabled_click'
-        AND (
-          action_type LIKE '%pick%'
-          OR (payload_json IS NOT NULL AND json_extract(payload_json, '$.reason') = 'pick_limit')
-        )
+      ${wherePrefix} (
+        (event_type = 'action.dispatched' AND action_type = 'feat' AND payload_json IS NOT NULL AND json_extract(payload_json, '$.pickLimitHit') = 1)
+        OR (event_type = 'ui.disabled_click' AND (action_type LIKE '%pick%' OR (payload_json IS NOT NULL AND json_extract(payload_json, '$.reason') = 'pick_limit')))
+      )
     `)
     .get(...timeFilter.params) as { count: number };
 
