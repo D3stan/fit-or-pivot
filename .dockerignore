@@ -1,3 +1,8 @@
 node_modules
 dist
+dist-server
+data
 .git
+*.db
+*.db-wal
+*.db-shm
