@@ -141,6 +141,7 @@ export function renderAdminPage(): string {
     button.btn-sm {
       padding: 3px 8px;
       font-size: 12px;
+      white-space: nowrap;
     }
     a.btn-link {
       display: inline-block;
@@ -166,6 +167,7 @@ export function renderAdminPage(): string {
       border-radius: 8px;
       padding: 14px;
       margin-bottom: 16px;
+      min-width: 0;
     }
     .card h2, .card h3 {
       margin: 0 0 10px;
@@ -538,7 +540,8 @@ export function renderAdminPage(): string {
       }
 
       async function apiFetch(url, opts) {
-        var res = await fetch(url, opts);
+        var target = url.charAt(0) === '/' ? window.location.origin + url : url;
+        var res = await fetch(target, opts);
         var text = await res.text();
         var data = null;
         try {

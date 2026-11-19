@@ -315,7 +315,7 @@ export function ingestBatch(
         updated_at = MAX(updated_at, ?),
         product_name = CASE WHEN ? != '' THEN ? ELSE product_name END,
         product_idea = CASE WHEN ? != '' THEN ? ELSE product_idea END,
-        initial_style = COALESCE(initial_style, ?),
+        initial_style = CASE WHEN final_month = 0 THEN COALESCE(?, initial_style) ELSE COALESCE(initial_style, ?) END,
         current_screen = ?,
         ended_reason = COALESCE(?, ended_reason),
         ended_at = CASE WHEN ? IS NOT NULL THEN COALESCE(ended_at, ?) ELSE ended_at END,
@@ -401,6 +401,7 @@ export function ingestBatch(
           s.name,
           s.idea,
           s.idea,
+          s.style || null,
           s.style || null,
           s.screen,
           endedReason,
@@ -859,6 +860,8 @@ export function getFrictionSignals(db: DatabaseSync, opts?: TimeRangeOpts) {
       FROM events
       ${wherePrefix} duration_ms IS NOT NULL
         AND screen_from IS NOT NULL
+        AND screen_to IS NOT NULL
+        AND screen_from != screen_to
         AND screen_from != 'testing'
       GROUP BY screen_from
       ORDER BY avgMs DESC
